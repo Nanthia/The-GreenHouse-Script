@@ -1,0 +1,16 @@
+{
+  "name": "the-greenhouse-script",
+  "version": "2.3.1",
+  "private": true,
+  "description": "Torn City faction war-room userscript suite: Hit Caller, Strike Teams, Chain Manager and Air Traffic Control in one floating hub.",
+  "scripts": {
+    "check": "node --check thegreenhouse.user.js",
+    "test": "npm run check && npm run test:ui && npm run test:sql",
+    "test:ui": "node smoketest.cjs ./thegreenhouse.user.js",
+    "test:sql": "node sqltest.cjs ./new_project_setup.sql"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "jsdom": "^26.0.0"
+  }
+}

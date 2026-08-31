@@ -1,0 +1,9 @@
+node_modules/
+package-lock.json
+.DS_Store
+*.log
+
+# Local scratch copies — never commit a file with real keys pasted in.
+*.local.js
+*.local.sql
+secrets.txt
