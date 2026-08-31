@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         The Green House
 // @namespace    thegreenhouse-tm
-// @version      2.3.1
+// @version      2.3.2
 // @description  Torn City faction war-room suite: Hit Caller, Strike Teams, Chain Manager and Air Traffic Control in one hub, floating over any Torn page.
 // @author       The Green House
 // @match        https://www.torn.com/*
@@ -238,20 +238,32 @@
   /* =====================================================================
    * HTTP
    * ===================================================================*/
+  const REQUEST_TIMEOUT_MS = 15000;
+
   function gmRequest({ method = "GET", url, headers = {}, data }) {
     return new Promise((resolve, reject) => {
       let settled = false;
+      let watchdog = null;
       const done = (fn, arg) => {
         if (settled) return;
         settled = true;
+        if (watchdog) clearTimeout(watchdog);
         fn(arg);
       };
+      // Greasemonkey's GM.xmlHttpRequest doesn't reliably honour `timeout` /
+      // `ontimeout`, so don't depend on the implementation to time out — if
+      // nothing has settled by now, fail it here. Without this a hung request
+      // leaves the panel stuck on "Loading..." forever.
+      watchdog = setTimeout(
+        () => done(reject, new Error("Request timed out after " + REQUEST_TIMEOUT_MS / 1000 + "s: " + url)),
+        REQUEST_TIMEOUT_MS + 1000
+      );
       const maybePromise = GMC.xhr({
         method,
         url,
         headers,
         data,
-        timeout: 15000,
+        timeout: REQUEST_TIMEOUT_MS,
         onload: (res) => {
           let parsed = null;
           try {
