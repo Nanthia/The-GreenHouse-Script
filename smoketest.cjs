@@ -391,21 +391,55 @@ async function run(mode, preseed, codeOverride) {
   console.log(JSON.stringify(r2.checks.panes, null, 2));
   console.log("errors: " + (r2.errors.length ? r2.errors.join("; ") : "none"));
 
-  // Baked-in config run: what a teammate sees after pasting only a Torn key.
-  // Simulates BAKED_IN being filled (plain and b64) with NO stored Supabase settings.
-  console.log("\n================ BAKED-IN CONFIG (teammate experience) ================");
-  for (const flavour of ["plain", "b64"]) {
-    const url = "https://bakedproj.supabase.co";
-    const key = "baked-anon-key";
-    const patched = code
-      .replace(/supabaseUrl: "",/, flavour === "b64" ? `supabaseUrl: "b64:${Buffer.from(url).toString("base64")}",` : `supabaseUrl: "${url}",`)
-      .replace(/supabaseAnonKey: "",/, flavour === "b64" ? `supabaseAnonKey: "b64:${Buffer.from(key).toString("base64")}",` : `supabaseAnonKey: "${key}",`);
+  // Teammate experience: run the SHIPPED file exactly as it is, with only a
+  // Torn API key stored and no Supabase settings — i.e. whatever is actually
+  // in BAKED_IN must carry the whole thing.
+  console.log("\n================ BAKED-IN CONFIG (teammate experience, file as shipped) ================");
+  {
+    // What does the shipped file claim to be baked in?
+    const m = code.match(/const BAKED_IN = \{([\s\S]*?)\};/);
+    const raw = m ? m[1] : "";
+    const grab = (k) => {
+      const mm = raw.match(new RegExp(k + ':\\s*\\n?\\s*"([^"]*)"'));
+      return mm ? mm[1] : "";
+    };
+    const unbake = (v) => (v.startsWith("b64:") ? Buffer.from(v.slice(4), "base64").toString() : v);
+    const expectedUrl = unbake(grab("supabaseUrl"));
+    const expectedKey = unbake(grab("supabaseAnonKey"));
+    console.log(`   BAKED_IN url -> ${expectedUrl || "(empty)"}`);
+    if (expectedKey) {
+      try {
+        const p = JSON.parse(Buffer.from(expectedKey.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
+        console.log(`   BAKED_IN key -> role=${p.role} ref=${p.ref} ${expectedUrl.includes(p.ref) ? "(matches url)" : "(!! DOES NOT MATCH URL)"}`);
+        if (p.role !== "anon") console.log("   *** WARNING: baked key is not the anon role — do NOT publish ***");
+      } catch {
+        console.log("   BAKED_IN key -> not a decodable JWT");
+      }
+    } else {
+      console.log("   BAKED_IN key -> (empty)");
+    }
+
     supabaseRows = { hit_claims: [], strike_teams: [], strike_team_members: [], strike_team_targets: [], faction_config: [] };
-    const saved = code;
-    global.__patched = patched;
-    const r3 = await runWithCode(patched, "tampermonkey", { tgh_tornApiKey: "TESTKEY123", tgh_userId: "111", tgh_username: "NatTest", tgh_myFactionId: "999", tgh_enemyFactionId: "888" });
-    console.log(`-- ${flavour}: supabaseReachedUrl=${r3.checks.supabaseUrlUsed || "(none)"} claimInserted=${r3.checks.claimInserted} settingsShowsBuiltIn=${r3.checks.settingsBuiltInBadge}`);
+    const r3 = await run("tampermonkey", { tgh_tornApiKey: "TESTKEY123", tgh_userId: "111", tgh_username: "NatTest", tgh_myFactionId: "999", tgh_enemyFactionId: "888" });
+    const reached = r3.checks.supabaseUrlUsed || "(none)";
+    const urlOk = expectedUrl && reached === expectedUrl;
+    console.log(`   reached=${reached} ${urlOk ? "OK" : "MISMATCH"}`);
+    console.log(`   claimInserted=${r3.checks.claimInserted} (want 1)   settingsShowsBuiltIn=${r3.checks.settingsBuiltInBadge} (want true)`);
     console.log(`   errors: ${r3.errors.length ? r3.errors.join("; ") : "none"}`);
-    void saved;
+    const pass = urlOk && r3.checks.claimInserted === 1 && r3.checks.settingsBuiltInBadge === true && r3.errors.length === 0;
+    console.log(`   ${pass ? "*** BAKED-IN CONFIG WORKS ***" : "*** BAKED-IN CONFIG FAILED ***"}`);
+  }
+
+  // Override precedence: a value typed into Settings must beat the baked-in one.
+  console.log("\n================ SETTINGS OVERRIDE BEATS BAKED-IN ================");
+  {
+    supabaseRows = { hit_claims: [], strike_teams: [], strike_team_members: [], strike_team_targets: [], faction_config: [] };
+    const r4 = await run("tampermonkey", {
+      tgh_tornApiKey: "TESTKEY123", tgh_userId: "111", tgh_username: "NatTest",
+      tgh_myFactionId: "999", tgh_enemyFactionId: "888",
+      tgh_supabaseUrl: "https://override.supabase.co", tgh_supabaseAnonKey: "override-key",
+    });
+    const ok = r4.checks.supabaseUrlUsed === "https://override.supabase.co" && r4.checks.settingsBuiltInBadge === false;
+    console.log(`   reached=${r4.checks.supabaseUrlUsed} builtInBadge=${r4.checks.settingsBuiltInBadge} -> ${ok ? "OK" : "FAILED"}`);
   }
 })();

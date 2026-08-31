@@ -64,9 +64,14 @@
    *
    * Generate one in your browser console:  btoa("your-value-here")
    * ===================================================================*/
+  // Project lmgljqelfeivxswwjahi. Base64'd only to keep automated key
+  // scrapers off a public repo — decode with atob() if you need to read them.
+  //   url: https://lmgljqelfeivxswwjahi.supabase.co
+  //   key: role "anon", expires 2036-08-31
   const BAKED_IN = {
-    supabaseUrl: "",
-    supabaseAnonKey: "",
+    supabaseUrl: "b64:aHR0cHM6Ly9sbWdsanFlbGZlaXZ4c3d3amFoaS5zdXBhYmFzZS5jbw==",
+    supabaseAnonKey:
+      "b64:ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW14dFoyeHFjV1ZzWm1WcGRuaHpkM2RxWVdocElpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT0RneE9ETTVPVGNzSW1WNGNDSTZNakV3TXpjMU9UazVOMzAuYTNER1RRVVNPenVlWkNTWWlCLTY2MFpHRFlFeVZsYTdUbV9LbHRPMDF6cw==",
   };
 
   // The userscript auto-detects the war from each member's own API key, so
