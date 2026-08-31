@@ -1,158 +1,118 @@
-# The Green House — Userscript Hub
+# The Green House
 
-One userscript — `thegreenhouse.user.js` (v2.2.0) — bringing four war tools from the webapp (Hit Caller, Strike Teams, Chain Manager, Air Traffic Control) into a single hub that floats over any `torn.com` page. Runs on **both Tampermonkey and Greasemonkey**. My Roster, Enemy Roster, Stats Analyser, Config, and Post-War Report stay in the original webapp for now.
+A faction war-room for [Torn City](https://www.torn.com), as a single userscript. Four coordination tools live in one floating panel that sits on top of any Torn page — no separate site to keep open in another tab.
 
-## How it works
+Works with **Tampermonkey** and **Greasemonkey**.
 
-A single round **TGH** button sits **bottom-left** on every Torn page, clear of Torn's chat. Click it to open the hub: a left-hand menu (Hit Caller, Strike Teams, Chain Manager, Air Traffic Control, Settings) and a content pane that swaps per tab.
+---
 
-**Both the button and the panel are draggable.** Drag the TGH button itself to park it anywhere; drag the panel by its header. Each position is remembered separately and survives reloads, and both are clamped back into view if you resize the window or switch to a smaller screen. Settings has a reset for each if anything ends up somewhere awkward. A drag never counts as a click, so moving the button won't open the panel.
+## The tools
 
-- Only the open tab polls. Switching tabs tears down the previous tool's timers; **closing the hub stops all polling entirely**.
-- No automatic page-detection — you land on whichever tab you used last and switch manually.
-- Your Torn ID, name and faction ID **fill in automatically** from your API key, so nothing depends on hand-typed IDs.
-- Everything is configured in the **Settings** tab.
+**🎯 Hit Caller** — the live enemy roster during a war. Every target with their status, hospital timer, level, fair-fight rating and estimated stats, sorted however you like. The important part is claiming: press **Claim** and the whole faction sees the target is taken, with a queue position if someone got there first. Claims expire on a timer so nothing stays locked forever, and you get an audible alert when a target you claimed leaves hospital.
 
-## Installing
+**🛡 Strike Teams** — build a squad for a coordinated push. Add members, track who's marked themselves ready, and keep an ordered target list you work down together, ticking targets off as they fall. Mission status moves through planning → recruiting → ready → in progress.
 
-1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Greasemonkey](https://www.greasespot.net/) (Firefox).
-2. Open the install URL — the extension will offer to install it, then auto-update from the same URL whenever a new version is pushed:
+**⛓ Chain Manager** — the chain timer, large and unmissable, turning red under a minute. Shows the next bonus milestone and how many hits away it is, plus a live availability board of who in the faction is actually around to hit: ready, idle, offline, hospitalised or travelling.
 
-   ```
-   https://raw.githubusercontent.com/Nanthia/The-GreenHouse-Script/main/thegreenhouse.user.js
-   ```
+**✈ Air Traffic Control** — who's overseas, allied and enemy. Each country shows how many are landed, inbound or in hospital there, flagged by whether it's an active conflict, enemy-held, or clear. A "safe havens" strip at the top tells you at a glance where you can fly without landing on top of the enemy.
 
-   **The repo must be public** for that raw URL to work without a token. If it's private, Tampermonkey can't fetch or auto-update it.
-3. Reload a `torn.com` tab, click **TGH**, and paste your Torn API key (limited access is enough). ID/name/faction populate themselves. Add the FFScouter key if you want fair-fight estimates.
+---
 
-## Setup for the faction (do this once)
+## Requirements
 
-Two SQL files ship here — use **one** of them:
+- **Tampermonkey** ([Chrome/Edge/Firefox/Safari](https://www.tampermonkey.net/)) or **Greasemonkey** ([Firefox](https://www.greasespot.net/))
+- A **Torn API key** — a *limited access* key is enough. Create one under [Preferences → API Key](https://www.torn.com/preferences.php#tab=api).
+- Optional: an **FFScouter API key**, only for the fair-fight and estimated-stat columns in Hit Caller.
 
-- **`new_project_setup.sql`** — for a **fresh Supabase project** (recommended). Creates every table, index, integrity rule and RLS policy in one pass. Crucially, `faction_config` has no `torn_api_key` / `ffs_api_key` columns, so the worst exposure doesn't exist by construction rather than being policed by a policy you have to trust.
-- **`rls_setup.sql`** — for **locking down your existing project** instead, if you'd rather not migrate. Same security posture, but it has to work around tables the webapp already owns.
+---
 
-Then:
+## Install
 
-1. **Run your chosen SQL** in the Supabase SQL Editor. In `new_project_setup.sql` you edit exactly one line — your faction ID, defined once as a function so it doesn't need find-and-replace. Do this *before* step 2: it's what makes shipping the key safe.
-2. **Fill in `BAKED_IN` at the top of `thegreenhouse.user.js`** with the project URL and publishable (anon) key. Teammates then install the script, paste their own Torn API key, and Hit Caller / Strike Teams work with nothing else to configure — Settings just shows a green "Built in" badge.
-3. Push to your public repo. Tampermonkey auto-updates everyone from there.
+1. Install Tampermonkey or Greasemonkey if you haven't already.
+2. Open this link — your userscript manager will offer to install it:
 
-If you go the fresh-project route, `new_project_setup.sql` ends with three app-side follow-ups — including one that matters: the webapp's `ConfigPage.tsx` currently writes `torn_api_key` into `faction_config`, and that column no longer exists, so that write must be stripped or the Config page will error on save.
+   **https://raw.githubusercontent.com/Nanthia/The-GreenHouse-Script/main/thegreenhouse.user.js**
 
-Optional: prefix either baked-in value with `b64:` and base64 the rest (`btoa("value")` in the console) to stop GitHub's secret scanners and key-scraping bots flagging a plain key in a public repo. It is not security — anyone can decode it instantly, and your teammates can read it either way — but it does defeat drive-by scraping. The script accepts plain or `b64:` transparently.
+3. Reload any Torn page. A round **TGH** button appears in the bottom-left corner.
+4. Click it, then paste your Torn API key into the **Settings** tab.
 
-## Does this need a backend at all?
+That's it. Your Torn ID, name and faction fill themselves in from the key, and the enemy faction is detected automatically once a ranked war starts.
 
-Yes, and not because of Supabase — because of what the features are. "My faction can see that I claimed this target" means state that lives somewhere both machines can read and write. That *is* a backend, by definition. Things that look like alternatives don't survive contact:
+Updates arrive on their own — your userscript manager checks this repo periodically and pulls new versions.
 
-- **Torn itself as the channel** (faction chat, announcements) — the Torn API is read-only, so writing would mean automating the site UI. Fragile, spams chat, and risks your accounts under Torn's automation rules.
-- **Peer-to-peer / WebRTC** — still needs a signalling server, and peers must be online simultaneously. A claim made while nobody else is connected simply vanishes.
-- **A different free database** (Firebase, JSONBin, Airtable, Cloudflare KV…) — identical trade-off with a different logo, and most have no RLS equivalent, so strictly worse.
-- **Local storage only** — each person sees their own claims and nobody else's, which is the one thing claims exist to do.
+---
 
-The only real choices are *whose* backend and *whether the client holds a credential*. Chain Manager and Air Traffic Control genuinely need no backend at all — they read the Torn API directly and work with just your API key. It's specifically the two coordination tools that can't.
+## Using it
 
-So: keep Supabase. It's free at your scale, it already works, and the fix was never to replace it — it was to turn RLS on.
+Click **TGH** to open the panel, then pick a tool from the menu down the left side. The panel reopens on whichever tool you used last.
 
-## Can you avoid sharing the anon key?
+- **Move things out of your way.** Drag the TGH button anywhere; drag the panel by its header bar. Both remember where you put them. There's a reset for each in Settings if something ends up somewhere awkward.
+- **Only the tool you're looking at refreshes**, and closing the panel stops all polling — so it isn't quietly hammering the Torn API in the background.
+- **Hit Caller filters**: search by name or ID, filter by status or location, and narrow by fair-fight range. Click any column header to sort by it.
+- **Claim timers** are set by your faction's TTL (default two minutes). If your claim lapses while you're still working on a target, just claim again.
 
-Short answer: the anon key isn't actually a secret — but in your current setup it behaves like one, and that's worth fixing.
+---
 
-Supabase anon keys are *designed* to be public. Every Supabase web app ships its anon key in the browser JS bundle, including your existing webapp today — anyone who opens devtools on it already has that key. What's supposed to make that safe is **row-level security**: the anon key only lets you do what your RLS policies allow. Your `supabase_schema.sql` explicitly disables RLS on these tables ("auth added in a later module"), so right now the anon key *is* effectively a master key for `hit_claims` and `strike_teams`. That's the real problem — not the act of sharing it.
+## Settings
 
-Three ways forward, roughly in order of effort:
+| Field | What it does |
+|---|---|
+| Torn API key | Required. Everything reads from this. Limited access is enough. |
+| FFScouter API key | Optional. Adds fair-fight and estimated stats to Hit Caller. |
+| Your Torn ID / Username | Fills in automatically from your API key. Claims are tagged with your real ID so the faction knows who claimed what. |
+| My Faction ID | Fills in automatically. |
+| Enemy Faction ID | Detected automatically during a ranked war. Type one in manually to scout a faction outside of war — a manual entry won't be overwritten. |
+| Claim TTL | How long your claims last before expiring, in seconds. |
+| Theme | Dark or light. |
 
-**1. Embed the key in the script + turn RLS on.** Teammates enter nothing, and the key stops mattering because the policies do the gatekeeping. This is the normal Supabase deployment model and by far the smallest change. It does mean anyone who reads the script has the key — which is fine once RLS is real, and not fine while it isn't.
+**Chain Manager** and **Air Traffic Control** need nothing but your Torn API key. **Hit Caller** and **Strike Teams** additionally need the faction's shared database, because they coordinate between people — see below.
 
-**2. Route the database through your own backend — no Supabase credentials in the script at all.** You already have the Vercel serverless pattern from `api/torn.ts`. Add an endpoint that holds the `service_role` key server-side; the script calls *your* endpoint, sending the user's own Torn API key; the endpoint asks Torn whether that key belongs to a member of your faction, and only then performs the read/write. This is the genuine "nobody shares a key" answer: the only credential each person needs is their own Torn API key, which they already have. Most work, best outcome.
+---
 
-**3. Supabase Edge Function issuing short-lived tokens.** Same verification idea as option 2, but hosted on Supabase: verify the Torn key, mint a short-lived JWT, and write RLS policies against its claims. Comparable effort to 2, keeps everything in Supabase instead of Vercel.
+## Your data
 
-My recommendation: **option 2** if you're willing to spend an evening on it, since it reuses infrastructure you already run and removes the shared credential completely. **Option 1** as a stopgap you could do today — but only alongside actually enabling RLS, since embedding the key without policies just makes the current exposure more convenient. Say the word and I'll build either.
+Your Torn API key is stored locally by your own userscript manager and is sent only to Torn's own API (`api.torn.com`). It is never sent to the shared database, and nobody else in the faction can see it.
 
-Chain Manager and Air Traffic Control need only the Torn API key — no Supabase at all.
+What is shared, when you claim a target or join a strike team, is your Torn ID, name, and what you claimed — which is the entire point of the feature.
 
-## What changed vs. the webapp
+---
 
-- No `api/torn.ts` / `api/ffs.ts` proxies needed — `GM_xmlhttpRequest` / `GM.xmlHttpRequest` reaches `api.torn.com` and `ffscouter.com` directly, CORS-free.
-- No React/build step — plain DOM in one injected hub panel.
-- Supabase realtime websockets replaced with polling (claims 5s, strike teams 10s), which the webapp already had as its fallback path.
-- Settings live in the userscript manager's own storage, not webapp `localStorage`, so each person configures once via Settings.
+## Faction setup
 
-## Changes in v2.3.1
+*For whoever runs the faction's database. Members don't need any of this.*
 
-- Added `new_project_setup.sql` (fresh-project schema + RLS in one script) and `sqltest.cjs`, which runs it against a real Postgres.
-- **Fixed a queue-jumping hole found by actually running the SQL:** `created_at` was client-supplied and the claim queue is ordered by it, so a member could have backdated a claim to position #1 — and anyone with a wrong PC clock got a wrong queue position regardless. The script now omits `created_at` so the database clock assigns it, and the setup SQL revokes insert on that column to enforce it server-side.
+Hit Caller and Strike Teams need a shared [Supabase](https://supabase.com) project (the free tier is fine). Two SQL scripts are included:
 
-## Changes in v2.3.0
+- **`new_project_setup.sql`** — for a fresh project. Creates every table, index, integrity rule and security policy in one pass. Edit one line at the top: your faction ID.
+- **`rls_setup.sql`** — to lock down an existing project that already has the tables instead.
 
-- Added `BAKED_IN` config at the top of the script (project URL + anon key), so most members configure nothing but their own Torn API key. A value typed into Settings still overrides it; blank both fields to fall back to built-in.
-- `b64:` prefix support on baked-in values, to defeat automated key scrapers on a public repo.
-- Settings shows a **Built in** badge instead of the Supabase fields when config is baked, with a "Use a different database…" escape hatch, so nobody breaks a working setup by poking at it.
-- The redundant `faction_config` write is now off by default (`SYNC_WAR_TO_SUPABASE = false`). Every client already detects the war from its own API key, so the shared copy bought nothing — and switching it off lets `rls_setup.sql` keep that table (which holds API keys) completely closed.
-- Added `rls_setup.sql`.
+Then paste the project URL and publishable (anon) key into the `BAKED_IN` block at the top of `thegreenhouse.user.js`. Members then configure nothing but their own Torn API key — Settings shows a green "Built in" badge instead of the database fields.
 
-## Changes in v2.2.0
+**Run the SQL before publishing the key.** The key is designed to be publishable, but only once row-level security is switched on; the SQL is what makes it safe to ship. Either value can be base64'd with a `b64:` prefix to keep automated key scrapers off it.
 
-- Moved the TGH button from bottom-right to **bottom-left**, out of the way of Torn's chat.
-- Made the button **draggable** with its position remembered (4px threshold so a click stays a click; clicks are ignored for 300ms after a drag release so letting go doesn't also open the panel).
-- Touch drag as well as mouse, and both the button and panel are re-clamped into view on window resize.
-- Added a "Reset button position" control in Settings next to the existing panel reset.
+---
 
-## Audit fixes in v2.1.0
+## Troubleshooting
 
-An audit of v2.0.0 found real defects; all are fixed here.
+**No TGH button.** Check the script is enabled in your userscript manager, and reload the Torn page. It's in the bottom-left corner by default — if you dragged it somewhere odd, use Settings → Reset button position.
 
-Crashes and dead panes:
+**"No Torn API key set."** Open Settings and paste your key. If it was rejected, confirm it's still active in Torn under Preferences → API Key.
 
-- **Air Traffic Control showed a permanently blank pane** when unconfigured — its config guard returned before ever rendering. Every module now renders an explanatory message on every guard path.
-- **Chain Manager could brick itself permanently.** Unguarded `m.status.state` / `m.last_action.timestamp` on a member missing those objects threw *inside* the sort comparator, after the container had been emptied — and the 1s re-render threw again forever. Now fully guarded, with the member sort wrapped in try/catch.
-- Strike Teams crashed the list view on a team row with a null `status`; `status` is now set explicitly on insert and defaulted on read.
+**Hit Caller says no enemy faction.** That's normal outside a war. It fills in automatically when a ranked war starts, or you can type an enemy faction ID into Settings to scout one manually.
 
-Data-loss and UI bugs:
+**Claims aren't syncing with the rest of the faction.** Everyone needs to be on the same database. If Settings shows the Supabase fields rather than a "Built in" badge, check with whoever set the project up. A red banner across the top of Hit Caller means the database is unreachable — claim info shown while that banner is up may be incomplete, so don't trust it mid-war.
 
-- **The Hit Caller search box only accepted one character** — every keystroke rebuilt the DOM and destroyed the focused input. Toolbar controls are now built once and only the table is redrawn.
-- **Strike Teams' 10-second poll wiped half-typed forms.** Background refreshes now defer while you're typing anywhere in a module, and apply the moment you click away.
-- Chain Manager rebuilt the whole scrolling container every second, making the member table impossible to scroll. Only the countdown text updates per tick now; scroll position is preserved on all table redraws.
-- **Closing the hub didn't stop anything** — every tool kept polling Torn and Supabase indefinitely, and `dataset.mounted` meant reopening never remounted (so a pane that came up blank stayed blank for the life of the page). Closing now runs cleanup; opening remounts.
+**Estimated stats and fair-fight are blank.** Those need an FFScouter API key in Settings; everything else works without it.
 
-Correctness:
+---
 
-- **Manually entered enemy faction IDs were wiped within 60 seconds** by war auto-detect. Manual entries are now flagged and never auto-cleared.
-- **War detection could pick your own faction as the enemy** when `myFactionId` was blank — letting people claim hits on teammates. Own-faction ID is now taken from the API, and detection won't guess without it.
-- **The char-code-sum identity hash is gone.** It collided between members (so one person's claims showed as another's, and "Wipe My Claims" could release someone else's), wrote fake low-numbered player IDs into the shared table, and orphaned every earlier row the moment a real ID was entered. Identity now comes from the Torn API, and claim actions refuse to run without a real ID.
-- **Failed reads no longer look like empty results** — a claims fetch failure showed "No active claims" on every target, so two people would both claim the same one. Failures now surface as an explicit banner and an "unknown" claim state.
-- Every Strike Teams mutation now reports errors instead of silently failing (a ticked checkbox no longer lies about what's in the database).
-- Queue order now actually orders by `created_at` (previously unordered, sorted on a column that was never written, so "#1 / #2" was arbitrary).
-- Hit Caller's location filter misread a domestic `"In hospital for 1 hour"` as being abroad — now country-aware.
-- The out-of-hospital alert was unreachable (a 120s claim TTL always expired before a hospital stay ended); it now tracks claimed targets independently of TTL. The alert is generated locally via WebAudio, so no remote asset and no CSP/autoplay issue.
-- Chain Manager treated `Abroad` members as "Ready", overstating the ready count.
-- FFScouter refreshed at ~80s rather than 60s, and Chain Manager's guard sat 500ms from its interval (dropping fetches to 60s); both timing guards fixed.
-- A fair-fight of exactly `0` is no longer coerced to `1`, and clearing the FF-max box no longer filters out every target.
-- Player IDs are coerced consistently, so claims can't silently fail to match their target on a text-vs-bigint column.
-- Sortable column headers are now actually clickable (they looked sortable but had no handlers), and target lists can be reordered.
-- Added `@noframes` — the script was running a full copy, timers and all, inside every same-origin iframe on the page.
-- Hub position is clamped to the viewport on restore, with a reset button, so it can't be stranded off-screen.
+## Development
 
-## Verification
-
-`smoketest.cjs` runs the script in a simulated browser (jsdom) with mocked GM APIs and realistic Torn/FFScouter/Supabase payloads — including deliberately malformed members with missing `status` objects — then drives the UI: drags the button (checking it moves, persists, clamps to the viewport, and doesn't toggle the panel), opens the hub, visits every tab twice, types in the search box, clicks sort headers, claims a target, creates a strike team, and closes the hub.
-
-```
-npm install jsdom
-node smoketest.cjs ./thegreenhouse.user.js
+```bash
+npm install
+npm test
 ```
 
-`sqltest.cjs` does the same for the database, running `new_project_setup.sql` against a real Postgres (PGlite/WASM — no server or install needed) and then asserting the security actually behaves as advertised: that claims can't be deleted, reassigned, backdated, duplicated, given absurd TTLs or written for another faction; that faction intel isn't readable; that cascades and triggers fire. This is how the queue-jumping hole above was found.
+`smoketest.cjs` drives the whole UI in a simulated browser against mocked Torn, FFScouter and Supabase responses. `sqltest.cjs` runs the database schema against a real Postgres and asserts the security rules actually hold — that claims can't be deleted, reassigned, backdated or written for another faction.
 
-```
-npm install @electric-sql/pglite
-node sqltest.cjs ./new_project_setup.sql
-```
-
-Currently reports `*** ALL CHECKS PASSED ***`, including a clean second run to confirm the script is safe to re-run.
-
-Current result: passes on both Tampermonkey-style (`GM_*`) and Greasemonkey-style (`GM.*`) mocks — no errors, no blank panes configured or unconfigured, search keeps focus, form drafts survive background polls, claims insert with correct `created_at`/`expires_at`/claimer, and zero API calls while the hub is closed.
-
-**This is still simulated, not live.** jsdom is not Chrome, and the mocked payloads are my best guess at real Torn API shapes — in particular the v2 `chain,members` response and FFScouter's exact response envelope are worth confirming against live data. Install it yourself and exercise each tab before rolling it out to the faction.
+Version 2.3.1
