@@ -4,17 +4,55 @@ A faction war-room for [Torn City](https://www.torn.com), as a single userscript
 
 Works with **Tampermonkey** and **Greasemonkey**.
 
+<p align="center">
+  <img src="screenshots/hit-caller.png" alt="Hit Caller open over a Torn page: enemy roster with status, hospital timers and claim buttons, with the tool menu down the left" width="900">
+</p>
+
 ---
 
 ## The tools
 
-**🎯 Hit Caller** — the live enemy roster during a war. Every target with their status, hospital timer, level, fair-fight rating and estimated stats, sorted however you like. The important part is claiming: press **Claim** and the whole faction sees the target is taken, with a queue position if someone got there first. Claims expire on a timer so nothing stays locked forever, and you get an audible alert when a target you claimed leaves hospital.
+A round **TGH** button sits in the bottom-left corner of every Torn page. Click it and the panel opens, with the four tools plus Settings down the left-hand side.
 
-**🛡 Strike Teams** — build a squad for a coordinated push. Add members, track who's marked themselves ready, and keep an ordered target list you work down together, ticking targets off as they fall. Mission status moves through planning → recruiting → ready → in progress.
+<p align="center">
+  <img src="screenshots/tgh-button.png" alt="The round TGH button that opens the panel" width="90">
+</p>
 
-**⛓ Chain Manager** — the chain timer, large and unmissable, turning red under a minute. Shows the next bonus milestone and how many hits away it is, plus a live availability board of who in the faction is actually around to hit: ready, idle, offline, hospitalised or travelling.
+### 🎯 Hit Caller
 
-**✈ Air Traffic Control** — who's overseas, allied and enemy. Each country shows how many are landed, inbound or in hospital there, flagged by whether it's an active conflict, enemy-held, or clear. A "safe havens" strip at the top tells you at a glance where you can fly without landing on top of the enemy.
+The live enemy roster during a war — every target with their status, hospital countdown, level, fair-fight rating and estimated stats.
+
+The point of it is claiming. Press **Claim** and the rest of the faction sees the target is taken; if someone beat you to it you get a queue position instead. Claims expire on a timer so nothing stays locked forever, **Wipe My Claims** drops all of yours at once, and you get an audible alert when a target you claimed comes out of hospital.
+
+Search by name or ID, filter by status or location, narrow by fair-fight range, and click any column header to sort. The poll interval is adjustable if you want it refreshing faster during a push.
+
+<img src="screenshots/hit-caller.png" alt="Hit Caller: filter toolbar, then a table of targets showing level, status with hospital countdown, last action and a Claim button per row" width="900">
+
+*(Fair-fight and estimated stats show as `—` unless you add an FFScouter key — everything else works without one.)*
+
+### ⛓ Chain Manager
+
+The chain timer, large and unmissable, turning red under a minute. Shows the next bonus milestone and how many hits away it is, plus a live availability board of who in the faction is actually around to hit — ready, idle, offline, hospitalised or travelling.
+
+<img src="screenshots/chain-manager.png" alt="Chain Manager showing its idle state when no chain is running" width="900">
+
+*(Shown with no chain running. Start one in Torn and this fills with the countdown, milestone track and availability board.)*
+
+### ✈ Air Traffic Control
+
+Who's overseas, allied and enemy. Each country lists how many are **L**anded, **I**nbound or in **H**ospital on each side, tagged by whether it's an active conflict, enemy-held, enemy-inbound or clear — sorted so the contested places float to the top. The **safe havens** strip tells you at a glance where you can fly without landing on the enemy, and the footer counts everyone still in Torn.
+
+Tap any country to expand it and see exactly who is there. Filters along the top narrow to safe countries, active conflicts, enemy present, and so on.
+
+<img src="screenshots/air-traffic-control.png" alt="Air Traffic Control: safe havens strip, filter buttons, and country rows showing allied and enemy landed, inbound and hospital counts with flight times" width="900">
+
+### 🛡 Strike Teams
+
+Build a squad for a coordinated push. Add members, track who's marked themselves ready, and keep an ordered target list you work down together, ticking targets off as they fall and reordering as things change. Mission status runs planning → recruiting → ready → countdown → in progress.
+
+<img src="screenshots/strike-teams.png" alt="Strike Teams showing the empty state with a New Strike Team button" width="900">
+
+*(Shown before any team exists.)*
 
 ---
 
@@ -33,23 +71,22 @@ Works with **Tampermonkey** and **Greasemonkey**.
 
    **https://raw.githubusercontent.com/Nanthia/The-GreenHouse-Script/main/thegreenhouse.user.js**
 
-3. Reload any Torn page. A round **TGH** button appears in the bottom-left corner.
-4. Click it, then paste your Torn API key into the **Settings** tab.
+3. Reload any Torn page. The round **TGH** button appears in the bottom-left corner.
+4. Click it and paste your Torn API key into the **Settings** tab.
 
 That's it. Your Torn ID, name and faction fill themselves in from the key, and the enemy faction is detected automatically once a ranked war starts.
 
-Updates arrive on their own — your userscript manager checks this repo periodically and pulls new versions.
+Updates arrive on their own — your userscript manager re-checks this repo periodically.
+
+> If that link gives you a Varnish/503 error, that's a CDN hiccup on your route rather than a problem with the file. Open the file on GitHub and use the **Raw** button, or copy the contents into a new script in your userscript manager by hand — either way you still get auto-updates afterwards.
 
 ---
 
 ## Using it
 
-Click **TGH** to open the panel, then pick a tool from the menu down the left side. The panel reopens on whichever tool you used last.
-
-- **Move things out of your way.** Drag the TGH button anywhere; drag the panel by its header bar. Both remember where you put them. There's a reset for each in Settings if something ends up somewhere awkward.
-- **Only the tool you're looking at refreshes**, and closing the panel stops all polling — so it isn't quietly hammering the Torn API in the background.
-- **Hit Caller filters**: search by name or ID, filter by status or location, and narrow by fair-fight range. Click any column header to sort by it.
-- **Claim timers** are set by your faction's TTL (default two minutes). If your claim lapses while you're still working on a target, just claim again.
+- **Move it out of your way.** Drag the TGH button anywhere; drag the panel by its header bar. Both remember where you put them, and Settings has a reset for each.
+- **Only the tool you're looking at refreshes**, and closing the panel stops all polling — it isn't quietly hammering the Torn API in the background.
+- The panel reopens on whichever tool you used last.
 
 ---
 
@@ -65,15 +102,17 @@ Click **TGH** to open the panel, then pick a tool from the menu down the left si
 | Claim TTL | How long your claims last before expiring, in seconds. |
 | Theme | Dark or light. |
 
-**Chain Manager** and **Air Traffic Control** need nothing but your Torn API key. **Hit Caller** and **Strike Teams** additionally need the faction's shared database, because they coordinate between people — see below.
+<img src="screenshots/settings.png" alt="The Settings tab showing identity and faction fields, with the shared database marked Built In" width="800">
+
+**Chain Manager** and **Air Traffic Control** need nothing but your Torn API key. **Hit Caller** and **Strike Teams** additionally need the faction's shared database — if Settings shows a green **BUILT IN** badge, that's already sorted and there's nothing for you to enter.
 
 ---
 
 ## Your data
 
-Your Torn API key is stored locally by your own userscript manager and is sent only to Torn's own API (`api.torn.com`). It is never sent to the shared database, and nobody else in the faction can see it.
+Your Torn API key is stored locally by your own userscript manager and is sent only to Torn's own API (`api.torn.com`). It never goes to the shared database, and nobody else in the faction can see it.
 
-What is shared, when you claim a target or join a strike team, is your Torn ID, name, and what you claimed — which is the entire point of the feature.
+What *is* shared, when you claim a target or join a strike team, is your Torn ID, name and what you claimed — which is the entire point of the feature.
 
 ---
 
@@ -86,7 +125,7 @@ Hit Caller and Strike Teams need a shared [Supabase](https://supabase.com) proje
 - **`new_project_setup.sql`** — for a fresh project. Creates every table, index, integrity rule and security policy in one pass. Edit one line at the top: your faction ID.
 - **`rls_setup.sql`** — to lock down an existing project that already has the tables instead.
 
-Then paste the project URL and publishable (anon) key into the `BAKED_IN` block at the top of `thegreenhouse.user.js`. Members then configure nothing but their own Torn API key — Settings shows a green "Built in" badge instead of the database fields.
+Then paste the project URL and publishable (anon) key into the `BAKED_IN` block at the top of `thegreenhouse.user.js`, so members configure nothing but their own Torn API key.
 
 **Run the SQL before publishing the key.** The key is designed to be publishable, but only once row-level security is switched on; the SQL is what makes it safe to ship. Either value can be base64'd with a `b64:` prefix to keep automated key scrapers off it.
 
@@ -94,15 +133,15 @@ Then paste the project URL and publishable (anon) key into the `BAKED_IN` block 
 
 ## Troubleshooting
 
-**No TGH button.** Check the script is enabled in your userscript manager, and reload the Torn page. It's in the bottom-left corner by default — if you dragged it somewhere odd, use Settings → Reset button position.
+**No TGH button.** Check the script is enabled in your userscript manager and reload the Torn page. It's bottom-left by default — if you dragged it somewhere odd, use Settings → Reset button position.
 
-**"No Torn API key set."** Open Settings and paste your key. If it was rejected, confirm it's still active in Torn under Preferences → API Key.
+**"No Torn API key set."** Open Settings and paste your key. If it was rejected, confirm it's still active under Preferences → API Key in Torn.
 
-**Hit Caller says no enemy faction.** That's normal outside a war. It fills in automatically when a ranked war starts, or you can type an enemy faction ID into Settings to scout one manually.
+**Hit Caller says no enemy faction.** Normal outside a war. It fills in automatically when a ranked war starts, or type an enemy faction ID into Settings to scout one manually.
 
-**Claims aren't syncing with the rest of the faction.** Everyone needs to be on the same database. If Settings shows the Supabase fields rather than a "Built in" badge, check with whoever set the project up. A red banner across the top of Hit Caller means the database is unreachable — claim info shown while that banner is up may be incomplete, so don't trust it mid-war.
+**Claims aren't syncing with the rest of the faction.** Everyone needs the same database. If Settings shows the Supabase fields rather than a BUILT IN badge, check with whoever set the project up. A red banner across the top of Hit Caller means the database is unreachable — claim info shown while that banner is up may be incomplete, so don't trust it mid-war.
 
-**Estimated stats and fair-fight are blank.** Those need an FFScouter API key in Settings; everything else works without it.
+**Fair-fight and estimated stats are blank.** Those need an FFScouter API key in Settings.
 
 ---
 
@@ -113,6 +152,8 @@ npm install
 npm test
 ```
 
-`smoketest.cjs` drives the whole UI in a simulated browser against mocked Torn, FFScouter and Supabase responses. `sqltest.cjs` runs the database schema against a real Postgres and asserts the security rules actually hold — that claims can't be deleted, reassigned, backdated or written for another faction.
+`smoketest.cjs` drives the whole UI in a simulated browser against mocked Torn, FFScouter and Supabase responses. `sqltest.cjs` runs the database schema against a real Postgres and asserts the security rules hold — that claims can't be deleted, reassigned, backdated or written for another faction.
 
-Version 2.3.1
+Screenshots in this README have had player names, IDs, API keys and faction identifiers redacted with `redact.py`.
+
+Version 2.3.2
